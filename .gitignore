@@ -34,3 +34,10 @@ Thumbs.db
 
 # 교재 원본 (저작권 보호)
 교재/
+
+# SKALA 내부 문서 (저작권)
+1) Full-stack Engineering_*.pdf
+SKALA 단어장 앱 기획*.pdf
+
+# 임시 파일
+schema_patch.sql
