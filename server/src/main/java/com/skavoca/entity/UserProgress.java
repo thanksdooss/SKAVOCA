@@ -44,4 +44,10 @@ public class UserProgress {
     
     @Column(name = "total_lapses")
     private Integer totalLapses;
+    
+    private Integer quality;
+    
+    @Builder.Default
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt = LocalDateTime.now();
 }

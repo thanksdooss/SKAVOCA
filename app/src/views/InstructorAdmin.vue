@@ -51,6 +51,36 @@
       </div>
     </div>
 
+    <!-- Bulk Upload Section -->
+    <div class="ssml-lab-card">
+      <div class="card-header">
+        <h3>📦 단어 일괄 업로드 (JSON)</h3>
+        <span class="badge-tag">대량 등록</span>
+      </div>
+
+      <div class="ssml-playground">
+        <div class="input-group full-width">
+          <label>JSON 데이터 입력</label>
+          <textarea
+            v-model="bulkJsonInput"
+            rows="6"
+            placeholder="[{...}]"
+          ></textarea>
+        </div>
+        
+        <div class="input-group full-width">
+          <label>또는 JSON 파일 업로드</label>
+          <input type="file" accept=".json" @change="handleFileUpload" style="background:transparent; border:none; padding:0;" />
+        </div>
+
+        <div class="playground-actions">
+          <button class="test-sound-btn" @click="submitBulkUpload">
+            📤 일괄 업로드 실행
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Word Seeding Management Modal -->
     <div class="modal-backdrop" v-if="showAddModal" @click.self="showAddModal = false">
       <div class="modal-content">
@@ -124,6 +154,63 @@ function showToast(msg) {
   setTimeout(() => {
     toastMessage.value = "";
   }, 3000);
+}
+
+const bulkJsonInput = ref('[\n  {\n    "courseId": 8,\n    "term": "GraphQL",\n    "fullTerm": "GraphQL",\n    "pronunciationKr": "그래프큐엘",\n    "easyMeaning": "클라이언트가 필요한 데이터만 콕 집어서 요청할 수 있게 해주는 API 언어",\n    "contextSentence": "REST API 대신 {{GraphQL}}을 도입하여 오버패칭 문제를 해결했다."\n  }\n]');
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    bulkJsonInput.value = evt.target.result;
+  };
+  reader.readAsText(file);
+}
+
+async function submitBulkUpload() {
+  try {
+    const wordsArray = JSON.parse(bulkJsonInput.value);
+    if (!Array.isArray(wordsArray)) {
+      showToast("❌ JSON 배열 형식이 아닙니다.");
+      return;
+    }
+    
+    try {
+      const res = await api.bulkUploadWords(wordsArray);
+      const successCount = res.data?.successCount || wordsArray.length;
+      const failCount = res.data?.failCount || 0;
+      
+      showToast(`✅ 성공: ${successCount}건, 실패: ${failCount}건 등록 완료`);
+      
+      wordsArray.forEach((w, idx) => {
+        const newId = 2000 + store.words.length + idx;
+        store.words.push({
+          wordId: newId,
+          ...w,
+          difficulty: "MEDIUM",
+          distractors: []
+        });
+      });
+      store.saveCustomWords();
+      
+    } catch(err) {
+      console.warn("API bulk upload failed, saving locally", err);
+      wordsArray.forEach((w, idx) => {
+        const newId = 2000 + store.words.length + idx;
+        store.words.push({
+          wordId: newId,
+          ...w,
+          difficulty: "MEDIUM",
+          distractors: []
+        });
+      });
+      store.saveCustomWords();
+      showToast(`✅ 로컬 단어장 ${wordsArray.length}건 등록 완료`);
+    }
+  } catch(e) {
+    showToast("❌ JSON 파싱 에러: 형식을 확인해주세요.");
+  }
 }
 
 function testAudioSynthesis() {

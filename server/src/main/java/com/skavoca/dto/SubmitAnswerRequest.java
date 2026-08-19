@@ -9,4 +9,7 @@ public class SubmitAnswerRequest {
     private Double responseTimeSec;
     private Integer hintCount;
     private Integer typoCount;
+    private java.time.LocalDateTime studiedAt;
+    private String localLogId;
+
 }

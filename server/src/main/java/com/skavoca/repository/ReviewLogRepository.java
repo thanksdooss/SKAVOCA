@@ -6,4 +6,7 @@ import java.util.List;
 
 public interface ReviewLogRepository extends JpaRepository<ReviewLog, Long> {
     List<ReviewLog> findByUser_UserIdOrderByReviewedAtDesc(Long userId);
+    boolean existsByUser_UserIdAndWord_WordIdAndReviewedAtAfter(Long userId, Long wordId, java.time.LocalDateTime startOfDay);
+    java.util.Optional<ReviewLog> findByLocalLogId(String localLogId);
+
 }

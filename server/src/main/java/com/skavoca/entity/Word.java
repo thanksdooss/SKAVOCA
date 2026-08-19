@@ -2,10 +2,12 @@ package com.skavoca.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Where;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "WORDS")
+@Where(clause = "is_active = true")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Word {
     
@@ -40,6 +42,18 @@ public class Word {
     @Column(length = 20)
     private String difficulty;
     
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+    
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+    
+    @Builder.Default
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt = LocalDateTime.now();
+    
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 }
+

@@ -14,4 +14,5 @@ public class SignupRequest {
     @NotBlank
     private String nickname;
     private Integer cohort;
+    private String authCode;
 }

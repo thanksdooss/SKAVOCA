@@ -14,6 +14,22 @@
     <!-- Active Card -->
     <div class="review-body" v-if="currentWord && !store.activeSession.isCompleted">
       <TinderSwipeCard :card="currentWord" @rate="handleRate" />
+
+      <!-- 4-Grade Review Buttons -->
+      <div class="review-buttons">
+        <button class="review-btn btn-again" @click="handleRate({ wordId: currentWord.wordId, quality: 1 })">
+          <span class="icon">←</span> Again
+        </button>
+        <button class="review-btn btn-hard" @click="handleRate({ wordId: currentWord.wordId, quality: 2 })">
+          <span class="icon">↓</span> Hard
+        </button>
+        <button class="review-btn btn-good" @click="handleRate({ wordId: currentWord.wordId, quality: 4 })">
+          <span class="icon">→</span> Good
+        </button>
+        <button class="review-btn btn-easy" @click="handleRate({ wordId: currentWord.wordId, quality: 5 })">
+          <span class="icon">↑</span> Easy
+        </button>
+      </div>
     </div>
 
     <!-- Completed Screen -->
@@ -30,7 +46,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted, onBeforeUnmount } from "vue";
 import { useLearningStore } from "../stores/useLearningStore.js";
 import TinderSwipeCard from "../components/TinderSwipeCard.vue";
 import confetti from "canvas-confetti";
@@ -47,6 +63,34 @@ function handleRate({ wordId, quality }) {
     confetti({ particleCount: 120, spread: 70 });
   }
 }
+
+function handleKeydown(e) {
+  if (store.activeSession.isCompleted || !currentWord.value) return;
+
+  const wordId = currentWord.value.wordId;
+  switch (e.key) {
+    case 'ArrowLeft':
+      handleRate({ wordId, quality: 1 });
+      break;
+    case 'ArrowDown':
+      handleRate({ wordId, quality: 2 });
+      break;
+    case 'ArrowRight':
+      handleRate({ wordId, quality: 4 });
+      break;
+    case 'ArrowUp':
+      handleRate({ wordId, quality: 5 });
+      break;
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
 </script>
 
 <style scoped>
@@ -93,7 +137,48 @@ function handleRate({ wordId, quality }) {
 .review-body {
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.review-buttons {
+  display: flex;
+  gap: 0.75rem;
   justify-content: center;
+  width: 100%;
+  max-width: 440px;
+}
+
+.review-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: #1e293b;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+.review-btn:active {
+  transform: scale(0.95);
+}
+
+.btn-again { color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); }
+.btn-hard { color: #f97316; border: 1px solid rgba(249, 115, 22, 0.5); }
+.btn-good { color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.5); }
+.btn-easy { color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); }
+
+.review-btn .icon {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 .completed-card {

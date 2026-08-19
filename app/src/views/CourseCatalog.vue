@@ -79,7 +79,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { api } from '../services/apiClient.js';
 import { useLearningStore } from '../stores/useLearningStore.js';
 import { CURRICULUM_COURSES, INITIAL_WORDS } from '../data/curriculumData.js';
 import { useRouter } from 'vue-router';
@@ -87,19 +88,29 @@ import { normalizeCanonical, calculateLevenshteinDistance } from '../services/le
 
 const store = useLearningStore();
 const router = useRouter();
-const courses = CURRICULUM_COURSES;
-const allWords = INITIAL_WORDS;
+const courses = ref([]);
+const allWords = ref(INITIAL_WORDS);
+
+onMounted(async () => {
+  try {
+    const res = await api.getCourses();
+    courses.value = res.data;
+  } catch {
+    // Fallback to local data
+    courses.value = CURRICULUM_COURSES;
+  }
+});
 
 const searchQuery = ref('');
 const selectedCourseId = ref(null);
 
 const selectedCourse = computed(() => {
-  return courses.find(c => c.id === selectedCourseId.value);
+  return courses.value.find(c => c.id === selectedCourseId.value);
 });
 
 const courseWords = computed(() => {
   if (!selectedCourseId.value) return [];
-  return allWords.filter(w => w.courseId === selectedCourseId.value);
+  return allWords.value.filter(w => w.courseId === selectedCourseId.value);
 });
 
 /**
@@ -149,7 +160,7 @@ function fuzzyMatch(text, query) {
 }
 
 const filteredWords = computed(() => {
-  let result = allWords;
+  let result = allWords.value;
 
   // Filter by course
   if (selectedCourseId.value) {
@@ -171,12 +182,12 @@ const filteredWords = computed(() => {
 });
 
 function getCourseColor(courseId) {
-  const course = courses.find(c => c.id === courseId);
+  const course = courses.value.find(c => c.id === courseId);
   return course ? course.color : '#94a3b8';
 }
 
 function getCourseIcon(courseId) {
-  const course = courses.find(c => c.id === courseId);
+  const course = courses.value.find(c => c.id === courseId);
   return course ? course.icon : '📚';
 }
 
