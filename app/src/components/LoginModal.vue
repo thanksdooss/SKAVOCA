@@ -54,6 +54,16 @@
           <span v-else-if="authStore.isLoading">로그인 중...</span>
           <span v-else>로그인 ➔</span>
         </button>
+
+        <!-- Quick Demo Fill -->
+        <div class="demo-section">
+          <span class="demo-title">⚡ 빠른 데모 계정 체험:</span>
+          <div class="demo-badges">
+            <button type="button" class="demo-chip" @click="fillDemo('skala_student@skala.ai', 'password123')">🎓 김스칼라 (학생)</button>
+            <button type="button" class="demo-chip" @click="fillDemo('instructor_lead@skala.ai', 'password123')">👨‍🏫 박리더 (강사)</button>
+            <button type="button" class="demo-chip" @click="fillDemo('junior_dev@skala.ai', 'password123')">🌱 이신입 (학생)</button>
+          </div>
+        </div>
       </form>
 
       <!-- Signup Form -->
@@ -167,6 +177,12 @@ function startLockoutTimer() {
       lockoutRemaining.value = remaining;
     }
   }, 1000);
+}
+
+async function fillDemo(email, password) {
+  loginForm.value.email = email;
+  loginForm.value.password = password;
+  await handleLogin();
 }
 
 async function handleLogin() {
@@ -390,6 +406,46 @@ async function handleSignup() {
 .submit-auth-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.demo-section {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-title {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.demo-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.demo-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.demo-chip:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateY(-1px);
 }
 
 @keyframes fadeIn {
