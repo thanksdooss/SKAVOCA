@@ -1,6 +1,5 @@
 # [SKAVOCA] 소프트웨어 요구사항 정의서 (Software Requirements Specification)
 
-> **Note**: 본 설계 문서상에는 OpenAI/GPT가 명시되어 있으나, 실제 구현은 **Google Gemini API** (무료 티어)를 사용하도록 변경되었습니다.
 
 ## 1. 문서 기본 정보 및 프로젝트 개요
 - **프로젝트명**: SKAVOCA (SKALA 4기 비전공자를 위한 지능형 IT 전문 어휘 에듀테크 플랫폼)
@@ -12,7 +11,7 @@
   - SKALA 4기 비전공 교육생들이 겪는 IT 전문 용어/약어/발음의 인지 과부하를 해소
   - **암묵적 평가(Implicit Assessment)** 기반의 SM-2 자동화로 인지적 마찰 없는 초고속 학습 몰입감 제공
   - **레벤슈타인 거리(Levenshtein Distance)** 기반 퍼지 매칭 및 **철자 블록 조립 UI**로 모바일 오타 피로도 완치
-  - **LLM(GPT-4o-mini) 기반 동적 피드백 파이프라인 & Cache-Aside**로 수동 딕셔너리의 콜드 스타트 한계 극복
+  - **DB 캐시 + 한국어 템플릿 기반 동적 피드백 파이프라인 & Cache-Aside**로 수동 딕셔너리의 콜드 스타트 한계 극복
   - **SSML 사전 렌더링 & S3/CDN 정적 캐싱**을 통한 0.1초 초저지연 오디오 재생 및 API 비용 제로화
   - **기수 기반 주간 리그전(Leaderboard) & 개발자 RPG 성장 티어**로 강력한 상업적 락인(Lock-in) 도파민 루프 형성
 
@@ -47,7 +46,7 @@
 | 6 | **REQ-F-LRN-004** | 학습 세션 | 퍼지 매칭 | 레벤슈타인 유사도 기반 오타 유예 처리 | 사용자가 입력한 단어가 정답과 유사도 80% 이상(예: `kubctl` $\to$ `kubectl`)일 경우 오답(EF 감점) 처리하지 않고 "오타 확인" 재입력 기회를 부여한다. | 신규 | 시스템 기능 | 상 (Must) | 중 | SCR-LRN-001 | Levenshtein Distance $\le 2$ |
 | 7 | **REQ-F-LRN-005** | 학습 세션 | 입력 보조 | 모바일 철자/단어 블록 조립 UI | 모바일 환경에서 긴 IT 용어(예: `List Comprehension`, `One-Hot Encoding`) 입력 시, 가상 키보드 외에 셔플된 단어/철자 블록을 탭하여 조립하는 모드를 제공한다. | 신규 | 사용성 | 상 (Must) | 중 | SCR-LRN-001 | 블록 탭 & 자동 슬롯 삽입 |
 | 8 | **REQ-F-SRS-001** | 분산 반복 | 자동 추론 | 텔레메트리 기반 SM-2 Quality 자동 계산 엔진 | 사용자의 '응답 소요 시간($T$)', '힌트 사용 횟수($H$)', '오타 재시도($R$)'를 백엔드가 수집하여 SM-2 Quality($q \in [0, 5]$)를 자동 산출하고 $EF$, $Interval$을 갱신한다. | 변경 | 알고리즘 | 상 (Must) | 상 | SCR-LRN-001 | 비즈니스 로직 자동화 |
-| 9 | **REQ-F-AI-001** | AI 피드백 | 동적 생성 | LLM (GPT-4o-mini) 기반 미등록 오답 실시간 해설 | DB에 없는 예상치 못한 오답(예: war 문제에 tar 입력) 입력 시, LLM API를 비동기 호출하여 비전공자 눈높이의 1문장 개념 비교 피드백을 실시간 생성한다. | 신규 | 생성형 AI | 상 (Must) | 상 | SCR-LRN-002 | OpenAI API 연동 |
+| 9 | **REQ-F-AI-001** | AI 피드백 | 동적 생성 | LLM (DB 캐시 + 한국어 템플릿) 기반 미등록 오답 실시간 해설 | DB에 없는 예상치 못한 오답(예: war 문제에 tar 입력) 입력 시, LLM API를 비동기 호출하여 비전공자 눈높이의 1문장 개념 비교 피드백을 실시간 생성한다. | 신규 | 생성형 AI | 상 (Must) | 상 | SCR-LRN-002 | DB 캐시 피드백 API 연동 |
 | 10 | **REQ-F-AI-002** | AI 피드백 | 캐싱 | 생성 피드백 DB 자동 적재 (Cache-Aside) | LLM이 생성한 비교 해설은 `Confusing_Distractors` 테이블에 즉시 영속화되어, 동일 오답에 대해 이후 0ms 지연 및 API 비용 제로로 서빙한다. | 신규 | 데이터 | 상 (Must) | 중 | 백엔드 파이프라인 | Cache-Aside 패턴 |
 | 11 | **REQ-F-TTS-004** | 음성 합성 | 정적 캐싱 | S3/CDN 기반 오디오 사전 렌더링 배포 | 관리자가 단어/SSML 등록 시 Google Cloud TTS를 1회만 호출하여 `.mp3` 바이너리를 생성하고 AWS S3 / CloudFront CDN에 영구 보관하여 클라이언트에 0.1초 초저지연 서빙한다. | 변경 | 인프라/성능 | 상 (Must) | 중 | 전 화면 오디오 | 비용 99.9% 절감 |
 | 12 | **REQ-F-GAME-001** | 게이미피케이션 | 성장 티어 | 개발자 성장 RPG 티어 시스템 | 학습 성공 및 스트릭에 따라 EXP를 지급하고 `코딩 노비` $\to$ `주니어 개발자` $\to$ `시니어 개발자` $\to$ `테크 리드` $\to$ `CTO`로 승급하는 도파민 보상 체계를 제공한다. | 신규 | 게이미피케이션 | 상 (Must) | 중 | SCR-MAIN-001<br>SCR-MY-001 | 레벨업 모달 & 배지 지급 |
@@ -67,9 +66,9 @@
 | 1 | **REQ-N-PERF-001** | 품질/성능 | 로딩 속도 | 초기 화면 렌더링 속도 보장 | 메인 대시보드 및 학습 화면의 First Contentful Paint(FCP)는 1.5초 이내여야 한다. | 신규 | 성능 | 상 | 중 | 전 화면 (SPA) | Vue SPA 번들 최적화 |
 | 2 | **REQ-N-PERF-002** | 품질/성능 | 오디오 속도 | CDN 정적 오디오 로딩 레이턴시 | 발음 듣기 클릭 시 CloudFront CDN 캐시를 통해 0.1초(100ms) 이내에 오디오 재생이 시작되어야 한다. | 변경 | 성능 | 상 | 중 | SCR-LRN-001<br>SCR-REV-001 | AWS S3 + CloudFront |
 | 3 | **REQ-N-PERF-003** | 품질/성능 | 처리 속도 | 알고리즘 연산 처리 시간 | SM-2 자동 추론 연산 및 `User_Progress` 테이블 갱신 트랜잭션은 50ms 이내에 완료되어야 한다. | 변경 | 성능 | 상 | 하 | SCR-LRN-001 | 비동기 큐 / 최적화 |
-| 4 | **REQ-N-PERF-004** | 품질/성능 | AI 생성 지연 | LLM 비동기 타임아웃 및 폴백 | OpenAI API 오답 피드백 생성 레이턴시는 최대 1.5초 이내로 제어하며, 지연 시 기본 템플릿 해설을 우선 표출 후 백그라운드 캐싱한다. | 신규 | 성능 | 상 | 상 | SCR-LRN-002 | CompletableFuture & Timeout |
+| 4 | **REQ-N-PERF-004** | 품질/성능 | AI 생성 지연 | LLM 비동기 타임아웃 및 폴백 | DB 캐시 피드백 API 오답 피드백 생성 레이턴시는 최대 1.5초 이내로 제어하며, 지연 시 기본 템플릿 해설을 우선 표출 후 백그라운드 캐싱한다. | 신규 | 성능 | 상 | 상 | SCR-LRN-002 | CompletableFuture & Timeout |
 | 5 | **REQ-N-SEC-001** | 보안/인증 | 암호화 | 비밀번호 단방향 암호화 저장 | 회원의 비밀번호는 평문으로 저장할 수 없으며, 단방향 해시 알고리즘인 `BCrypt` (Strength 10 이상)를 적용하여 저장해야 한다. | 신규 | 보안 | 상 | 하 | SCR-AUTH-001 | Spring Security Crypto |
-| 6 | **REQ-N-SEC-002** | 보안/인증 | API 보안 | LLM 및 Cloud API 키 완벽 은닉 | OpenAI 및 Google Cloud API Key는 서버 환경변수로 철저히 관리되며 클라이언트 번들에 절대 포함되지 않는다. | 변경 | 보안 | 상 | 하 | 백엔드 인프라 | AWS Secrets Manager |
+| 6 | **REQ-N-SEC-002** | 보안/인증 | API 보안 | LLM 및 Cloud API 키 완벽 은닉 | DB 캐시 시스템 및 Google Cloud API Key는 서버 환경변수로 철저히 관리되며 클라이언트 번들에 절대 포함되지 않는다. | 변경 | 보안 | 상 | 하 | 백엔드 인프라 | AWS Secrets Manager |
 | 7 | **REQ-N-COMP-001** | 호환성 | 반응형 | 멀티 디바이스 반응형 웹 지원 | 모바일(iOS Safari, Android Chrome), 태블릿(iPad), 데스크톱(Chrome, Edge) 브라우저 환경에서 깨짐 없이 유연하게 레이아웃이 반응해야 한다. | 신규 | 사용성 | 상 | 중 | 전 화면 | CSS Media Query / Flex |
 | 8 | **REQ-N-REL-001** | 신뢰성 | 무결성 | 데이터 무결성 (Foreign Key) | `User_Progress` 및 `Weekly_League` 테이블은 `Users` 테이블과 외래키(FK) 및 복합 유니크 제약을 설정하여 데이터 정합성을 보장한다. | 변경 | 데이터 | 상 | 하 | DB 스키마 | RDBMS 제약조건 |
 | 9 | **REQ-N-REL-002** | 신뢰성 | 트랜잭션 | EXP 지급 및 SM-2 갱신 원자성 | 단어 학습 성공 시 EXP 획득과 알고리즘 수치 업데이트는 단일 트랜잭션(@Transactional)으로 묶여 무결성을 유지한다. | 신규 | 신뢰성 | 상 | 하 | Service Layer | Spring @Transactional |

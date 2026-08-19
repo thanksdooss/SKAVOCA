@@ -74,23 +74,36 @@ public class LearningService {
         String normalizedInput = levenshteinService.normalizeCanonical(request.getUserInput());
         String normalizedAnswer = levenshteinService.normalizeCanonical(word.getTerm());
         
+        // AFK 보정: 60초 초과 시 최대 60초로 클램핑
+        double clampedTimeSec = Math.min(request.getResponseTimeSec(), 60.0);
+        
         boolean isExactMatch = normalizedInput.equals(normalizedAnswer);
         double similarity = levenshteinService.calculateSimilarity(normalizedInput, normalizedAnswer);
         
         String resultType;
         boolean isCorrect = false;
         boolean isTypo = false;
+        boolean isConfusion = false;
         boolean allowRetry = false;
+        String confusedWith = null;
         
         if (isExactMatch) {
             resultType = "CORRECT";
             isCorrect = true;
-        } else if (similarity >= 0.8) {
-            resultType = "TYPO_WARNING";
-            isTypo = true;
-            allowRetry = true;
         } else {
-            resultType = "INCORRECT";
+            // 혼동 오답 검사: 입력값이 다른 IT 용어와 일치하는지 확인 (war→jar 등)
+            Word confusedWord = wordRepository.findByTermIgnoreCase(request.getUserInput().trim());
+            if (confusedWord != null && !confusedWord.getWordId().equals(word.getWordId())) {
+                resultType = "INCORRECT";
+                isConfusion = true;
+                confusedWith = confusedWord.getTerm();
+            } else if (similarity >= 0.8) {
+                resultType = "TYPO_WARNING";
+                isTypo = true;
+                allowRetry = true;
+            } else {
+                resultType = "INCORRECT";
+            }
         }
         
         if (allowRetry) {
@@ -105,7 +118,7 @@ public class LearningService {
                 .build();
         }
         
-        int quality = sm2Engine.inferQualityScore(isCorrect, request.getResponseTimeSec(), request.getHintCount(), request.getTypoCount());
+        int quality = sm2Engine.inferQualityScore(isCorrect, clampedTimeSec, request.getHintCount(), request.getTypoCount());
         
         UserProgress progress = progressRepository.findByUser_UserIdAndWord_WordId(userId, word.getWordId())
             .orElseGet(() -> UserProgress.builder()

@@ -196,18 +196,46 @@ export const useLearningStore = defineStore("learning", {
         };
       } catch (err) {
         console.error("Answer submission failed, using local fallback", err);
-        // Local fallback with full SM-2 support (using static imports)
-        const matchResult = evaluateAnswerMatch(userInput, word);
+        // AFK 보정: 60초 초과 시 최대 60초로 클램핑 (자리 비움 방어)
+        const clampedTimeSec = Math.min(responseTimeSec, 60);
+        // Local fallback with confusion detection + SM-2
+        const matchResult = evaluateAnswerMatch(userInput, word, this.words);
 
         if (matchResult.isCorrect) {
           soundEffects.playSuccess();
-          // Apply SM-2 locally for correct answers
-          const quality = inferQualityScore(true, responseTimeSec, this.activeSession.hintCount, this.activeSession.typoCount);
+          const quality = inferQualityScore(true, clampedTimeSec, this.activeSession.hintCount, this.activeSession.typoCount);
           const currentProgress = this.progressMap[word.wordId] || {};
           const newProgress = sm2Engine.calculateNextReview(currentProgress, quality);
           this.progressMap[word.wordId] = newProgress;
           this._persistProgressMap();
+          // XP 경제학: 오늘 이미 푼 단어는 +0, 신규/복습 대기는 +20, 장기 방어는 +50
+          const xpReward = this._calculateXpReward(word.wordId, currentProgress);
+          if (xpReward > 0) {
+            const gameStore = useGamificationStore();
+            gameStore.addXp(xpReward);
+          }
           return { status: "CORRECT", word };
+        } else if (matchResult.isConfusion) {
+          // 혼동 오답: 다른 IT 용어와 혼동 → 오답 분석 모달 트리거
+          soundEffects.playError();
+          this.activeSession.items.push(word);
+          const currentProgress = this.progressMap[word.wordId] || {};
+          const newProgress = sm2Engine.calculateNextReview(currentProgress, 0);
+          this.progressMap[word.wordId] = newProgress;
+          this._persistProgressMap();
+          return {
+            status: "INCORRECT",
+            word,
+            correctTerm: word.term,
+            isConfusion: true,
+            confusedWith: matchResult.confusedWith,
+            feedback: {
+              correctConcept: `${word.term} : ${word.easyMeaning}`,
+              practicalTip: `'${matchResult.confusedWith}'와(과) '${word.term}'은(는) 서로 다른 개념입니다. ${word.contextSentence ? word.contextSentence.replace(/\{\{/g, '').replace(/\}\}/g, '') : ''}`,
+              isDynamic: true,
+            },
+            isAiGenerated: false,
+          };
         } else if (matchResult.isTypo) {
           this.activeSession.typoCount += 1;
           return {
@@ -217,7 +245,6 @@ export const useLearningStore = defineStore("learning", {
         } else {
           soundEffects.playError();
           this.activeSession.items.push(word);
-          // Apply SM-2 locally for incorrect answers (quality = 0)
           const currentProgress = this.progressMap[word.wordId] || {};
           const newProgress = sm2Engine.calculateNextReview(currentProgress, 0);
           this.progressMap[word.wordId] = newProgress;
@@ -301,6 +328,36 @@ export const useLearningStore = defineStore("learning", {
       } catch(e) {
         this.progressMap = {};
       }
+    },
+
+    /**
+     * XP 경제학: 망각 곡선 비례 경험치 + 어뷰징 방지
+     * - 오늘 이미 푼 단어 반복: +0 XP (어뷰징 차단)
+     * - 신규/복습 대기 단어 정답: +20 XP
+     * - 복습 주기 14일 이상 장기 기억 방어: +50 XP (잭팟)
+     * - 일일 최대 1,000 XP 상한
+     */
+    _calculateXpReward(wordId, prevProgress) {
+      const today = new Date().toDateString();
+      // 일일 학습 기록 초기화
+      if (!this._todayXpLog || this._todayXpLog.date !== today) {
+        this._todayXpLog = { date: today, totalXp: 0, answeredWords: new Set() };
+      }
+      // 일일 상한 체크
+      if (this._todayXpLog.totalXp >= 1000) return 0;
+      // 오늘 이미 푼 단어 → +0 (어뷰징 차단)
+      if (this._todayXpLog.answeredWords.has(wordId)) return 0;
+      this._todayXpLog.answeredWords.add(wordId);
+
+      let reward = 20; // 기본 보상
+      // 장기 기억 방어 잭팟: 복습 주기 14일 이상
+      if (prevProgress && prevProgress.intervalDays >= 14) {
+        reward = 50;
+      }
+      // 일일 상한 초과 방지
+      reward = Math.min(reward, 1000 - this._todayXpLog.totalXp);
+      this._todayXpLog.totalXp += reward;
+      return reward;
     }
   }
 });
