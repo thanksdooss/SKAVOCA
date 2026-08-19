@@ -24,6 +24,6 @@ server:
   port: 8080
 
 jwt:
-  secret: skavoca-super-secret-key-for-jwt-token-generation-2026-must-be-256-bits-long
+  secret: ${JWT_SECRET:dev-only-skavoca-local-secret-key-not-for-production-256bit}
   access-expiration: 1800000
   refresh-expiration: 604800000
