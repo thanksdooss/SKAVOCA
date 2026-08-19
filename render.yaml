@@ -38,4 +38,4 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://app-eta-ecru-79.vercel.app
+        value: https://skavoca-skala.vercel.app,https://app-eta-ecru-79.vercel.app
