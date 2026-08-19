@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.gradle/
+build/
+
+# Build outputs
+app/dist/
+server/build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+Thumbs.db
+*.swp
+*.swo
+
+# Lecture materials (large PDFs)
+교재/
