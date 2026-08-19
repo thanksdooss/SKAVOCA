@@ -1,6 +1,5 @@
 # [SKAVOCA] 데이터 모델링 (ERD 및 DB 스키마 설계서)
 
-> **Note**: 본 설계 문서상에는 OpenAI/GPT가 명시되어 있으나, 실제 구현은 **Google Gemini API** (무료 티어)를 사용하도록 변경되었습니다.
 
 ## 1. 개요 및 설계 철학
 본 데이터 모델은 **암묵적 SM-2 텔레메트리 연산**, **LLM 동적 오답 피드백 Cache-Aside**, **S3/CDN 정적 오디오 캐싱**, **기수 기반 주간 랭킹 리그 & RPG 티어 게이미피케이션**을 완벽하게 수용하도록 확장 설계되었습니다.
@@ -57,7 +56,7 @@ erDiagram
         BIGINT word_id FK "정답 단어 ID"
         VARCHAR wrong_input "학생들의 오답 (예: jar, tar)"
         TEXT feedback_explanation "개념 차이점 비교 분석 해설"
-        BOOLEAN is_ai_generated "LLM(GPT-4o-mini) 동적 생성 여부"
+        BOOLEAN is_ai_generated "DB 캐시 + 한국어 템플릿 동적 생성 여부"
         DATETIME created_at "생성 및 캐싱 일시"
     }
 
@@ -145,7 +144,7 @@ Table confusing_distractors {
   word_id bigint [ref: > words.word_id, not null, note: '정답 단어 ID']
   wrong_input varchar(100) [not null, note: '오답 단어 (예: jar, tar)']
   feedback_explanation text [not null, note: '지능형 개념 비교 피드백 해설']
-  is_ai_generated boolean [not null, default: false, note: 'GPT-4o-mini 생성 여부']
+  is_ai_generated boolean [not null, default: false, note: 'DB 캐시 + 한국어 템플릿 생성 여부']
   created_at datetime [default: `now()`, note: '생성 및 캐싱 일시']
 
   indexes {

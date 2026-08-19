@@ -1,6 +1,5 @@
 # [SKAVOCA] RESTful API 명세서 (API Specification)
 
-> **Note**: 본 설계 문서상에는 OpenAI/GPT가 명시되어 있으나, 실제 구현은 **Google Gemini API** (무료 티어)를 사용하도록 변경되었습니다.
 
 ## 1. API 개요 및 공통 표준
 - **Base URL**: `https://api.skavoca.skala.ac.kr/api/v1`
@@ -20,7 +19,6 @@
 
 ## 2. 엔드포인트 종합 목록
 
-> **현재 아키텍처 참고사항**: 본 API 명세서는 향후 Spring Boot 백엔드 구축 시 참조 문서 역할을 합니다. 현재 SKAVOCA v1.0은 Vue.js SPA + localStorage 기반의 프론트엔드 전용 아키텍처로 배포되며, 모든 비즈니스 로직(SM-2 엔진, Cache-Aside, 게이미피케이션)은 클라이언트 측 Pinia 스토어에서 처리됩니다.
 
 | 도메인 | HTTP Method | Endpoint | 설명 | 인증 |
 | :--- | :---: | :--- | :--- | :---: |
@@ -28,7 +26,7 @@
 | | `POST` | `/api/v1/auth/login` | 로그인 및 JWT 토큰 발급 | Public |
 | **학습 (Learning)** | `GET` | `/api/v1/learning/today` | 오늘의 학습/복습 덱 (Due Words + S3 오디오 URL) | User |
 | | `POST` | `/api/v1/learning/submit-answer` | **[핵심]** 쾌속 정답 제출 + 퍼지 매칭 + SM-2 자동 추론 + EXP 지급 | User |
-| **AI 피드백 (LLM)** | `POST` | `/api/v1/ai/explain-distractor` | GPT-4o-mini 비동기 오답 해설 생성 및 DB 자동 캐싱 | User |
+| **AI 피드백 (LLM)** | `POST` | `/api/v1/ai/explain-distractor` | DB 캐시 + 한국어 템플릿 비동기 오답 해설 생성 및 DB 자동 캐싱 | User |
 | **게이미피케이션** | `GET` | `/api/v1/gamification/league` | SKALA 4기 주간 랭킹 리그전 순위 및 승급 현황 조회 | User |
 | | `GET` | `/api/v1/gamification/profile` | 내 RPG 티어(노비~CTO), 누적 EXP, 보유 배지 조회 | User |
 | **교수자 (Admin)** | `GET` | `/api/v1/admin/analytics/difficult-words` | 기수별 Top 10 취약 어휘 통계 분석 | Admin/Inst |

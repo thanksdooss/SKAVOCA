@@ -114,6 +114,16 @@
       </button>
     </div>
 
+    <!-- AFK 자리 비움 감지 오버레이 -->
+    <div class="afk-overlay" v-if="isAfk">
+      <div class="afk-modal">
+        <div class="afk-icon">⏸️</div>
+        <h3>자리 비움 상태인가요?</h3>
+        <p>30초 이상 입력이 없어 타이머가 일시정지되었습니다.</p>
+        <button class="afk-resume-btn" @click="resumeFromAfk">▶ 계속 학습하기</button>
+      </div>
+    </div>
+
     <!-- Bottom Sheet Error Modal (Duolingo Style with Pronunciation Revealed) -->
     <BottomSheetFeedback
       :is-open="isErrorModalOpen"
@@ -158,6 +168,31 @@ const hintLevel = ref(0);
 const elapsedSeconds = ref(0);
 let timerInterval = null;
 
+// AFK (Away From Keyboard) 감지
+const isAfk = ref(false);
+let lastActivityTime = Date.now();
+let afkCheckInterval = null;
+let afkPausedDuration = 0; // AFK 중 경과 시간 누적 (ms)
+let afkStartTime = null;
+const AFK_THRESHOLD_SEC = 30;
+
+function resetActivityTimer() {
+  lastActivityTime = Date.now();
+  // AFK 상태가 아닐 때만 리셋 (AFK 해제는 버튼으로만)
+}
+
+function resumeFromAfk() {
+  if (afkStartTime) {
+    afkPausedDuration += Date.now() - afkStartTime;
+    // startTime을 보정하여 AFK 시간을 응답 시간에서 제외
+    store.activeSession.startTime += (Date.now() - afkStartTime);
+  }
+  afkStartTime = null;
+  isAfk.value = false;
+  lastActivityTime = Date.now();
+  elapsedSeconds.value = Math.round((Date.now() - store.activeSession.startTime) / 1000);
+}
+
 const currentWord = computed(() => store.currentSessionWord);
 
 const parsedCloze = computed(() => {
@@ -182,6 +217,9 @@ watch(currentWord, () => {
   hintLevel.value = 0;
   isTypoToast.value = false;
   elapsedSeconds.value = 0;
+  isAfk.value = false;
+  lastActivityTime = Date.now();
+  afkStartTime = null;
   if (inputRef.value) {
     setTimeout(() => inputRef.value?.focus(), 50);
   }
@@ -189,12 +227,31 @@ watch(currentWord, () => {
 
 onMounted(() => {
   timerInterval = setInterval(() => {
-    elapsedSeconds.value += 1;
+    if (!isAfk.value) {
+      elapsedSeconds.value += 1;
+    }
   }, 1000);
+
+  // AFK 감지: 30초간 상호작용 없으면 타이머 일시정지
+  afkCheckInterval = setInterval(() => {
+    if (!isAfk.value && (Date.now() - lastActivityTime) > AFK_THRESHOLD_SEC * 1000) {
+      isAfk.value = true;
+      afkStartTime = Date.now();
+    }
+  }, 1000);
+
+  // 상호작용 이벤트 감지
+  document.addEventListener('keydown', resetActivityTimer);
+  document.addEventListener('mousemove', resetActivityTimer);
+  document.addEventListener('touchstart', resetActivityTimer);
 });
 
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval);
+  if (afkCheckInterval) clearInterval(afkCheckInterval);
+  document.removeEventListener('keydown', resetActivityTimer);
+  document.removeEventListener('mousemove', resetActivityTimer);
+  document.removeEventListener('touchstart', resetActivityTimer);
 });
 
 function getCourseName(courseId) {
@@ -548,5 +605,65 @@ function closeErrorModal() {
   padding: 0.85rem 2rem;
   border-radius: 12px;
   cursor: pointer;
+}
+
+/* AFK 자리 비움 오버레이 */
+.afk-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.3s ease;
+}
+
+.afk-modal {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2.5rem;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 360px;
+}
+
+.afk-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.afk-modal h3 {
+  font-size: 1.3rem;
+  color: #f1f5f9;
+  margin-bottom: 0.5rem;
+}
+
+.afk-modal p {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 1.5rem;
+}
+
+.afk-resume-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.85rem 2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.afk-resume-btn:hover {
+  background: #3b82f6;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
