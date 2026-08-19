@@ -1,3 +1,9 @@
+databases:
+  - name: skavoca-db
+    plan: free
+    databaseName: skavoca
+    region: singapore
+
 services:
   - type: web
     name: skavoca-api
@@ -5,14 +11,31 @@ services:
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
     plan: free
+    region: singapore
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      - key: DATABASE_URL
-        sync: false
+      - key: DB_HOST
+        fromDatabase:
+          name: skavoca-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: skavoca-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: skavoca-db
+          property: database
       - key: DB_USERNAME
-        sync: false
+        fromDatabase:
+          name: skavoca-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: skavoca-db
+          property: password
       - key: JWT_SECRET
         generateValue: true
+      - key: CORS_ORIGINS
+        value: https://app-eta-ecru-79.vercel.app
