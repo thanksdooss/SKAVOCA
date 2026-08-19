@@ -24,26 +24,26 @@
           :class="['tab-btn', { active: currentRoute === 'learn' }]"
           @click="goLearn"
         >
-          ⚡ 빠른 문제 풀기
+          ⚡ 문제풀기
         </button>
         <button
           :class="['tab-btn', { active: currentRoute === 'review' }]"
           @click="goReview"
         >
-          🎴 스와이프 학습 모드
+          🎴 스와이프
         </button>
         <button
           :class="['tab-btn', { active: currentRoute === 'stats' }]"
           @click="router.push({ name: 'stats' })"
         >
-          📊 마이리포트
+          📊 리포트
         </button>
         <button
           v-if="authStore.isInstructor"
           :class="['tab-btn', 'admin-btn', { active: currentRoute === 'instructor' }]"
           @click="router.push({ name: 'instructor' })"
         >
-          👨‍🏫 교수자 분석
+          👨‍🏫 교수자
         </button>
       </nav>
 
@@ -187,14 +187,15 @@ function goReview() {
   border: none;
   color: #94a3b8;
   font-weight: 600;
-  font-size: 0.88rem;
-  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  white-space: nowrap;
 }
 
 .tab-btn:hover {
