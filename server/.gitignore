@@ -1,0 +1,11 @@
+# Dependencies
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
