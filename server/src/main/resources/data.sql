@@ -6,7 +6,7 @@
 INSERT INTO USERS (user_id, email, password_hash, nickname, role, cohort, xp, tier, streak_days) VALUES
 (1, 'skala_student@skala.ai', '$2a$10$w8T0...BCryptHash', '김스칼라', 'ROLE_STUDENT', 4, 1420, '시니어 개발자', 7),
 (2, 'instructor_lead@skala.ai', '$2a$10$w8T0...BCryptHash', '박리더 강사', 'ROLE_INSTRUCTOR', 4, 8900, '전설의 CTO', 45),
-(3, 'junior_dev@skala.ai', '$2a$10$w8T0...BCryptHash', '이신입', 'ROLE_STUDENT', 4, 150, '코딩 노비', 2);
+(3, 'junior_dev@skala.ai', '$2a$10$w8T0...BCryptHash', '이신입', 'ROLE_STUDENT', 4, 150, '코딩 노비', 2) ON CONFLICT (user_id) DO NOTHING;
 
 -- 2. Curriculum Courses
 INSERT INTO CURRICULUM_COURSES (course_id, course_name, icon, color, order_index) VALUES
@@ -18,7 +18,8 @@ INSERT INTO CURRICULUM_COURSES (course_id, course_name, icon, color, order_index
 (6, '6. Feature Engineering', '⚙️', '#ec4899', 6),
 (7, '7. Java, SpringBoot, REST API', '🍃', '#6db33f', 7),
 (8, '8. Agile 및 MSA 개발', '☸️', '#326ce5', 8),
-(9, '9. Frontend Vue.js', '⚡', '#42b883', 9);
+(9, '9. Frontend Vue.js', '⚡', '#42b883', 9)
+ON CONFLICT DO NOTHING;
 
 -- 3. Master 270 Vocabulary Words
 INSERT INTO WORDS (word_id, course_id, term, full_term, pronunciation_kr, pronunciation_ssml, easy_meaning, context_sentence, difficulty) VALUES
@@ -291,7 +292,8 @@ INSERT INTO WORDS (word_id, course_id, term, full_term, pronunciation_kr, pronun
 (927, 9, 'defineEmits', 'Vue 3 defineEmits Compiler Macro', '디파인 에밋 (자식 이벤트 선언)', '<speak><phoneme alphabet="x-sampa" ph="dI-faIn I-mIts">defineEmits</phoneme></speak>', '`<script setup>` 내부에서 자식 컴포넌트가 부모 컴포넌트를 향해 발생(발행)시킬 수 있는 커스텀 이벤트 목록을 선언하는 컴파일러 매크로', '스와이프 평가 완료 시 부모에게 채점 결과를 알리는 ''rate'' 이벤트를 선언하기 위해 `const emit = {{defineEmits}}([''rate'']);`를 작성했다.', 'EASY'),
 (928, 9, 'Provide / Inject', 'Vue 3 Provide and Inject Pattern', '프로바이드 / 인젝트 (장거리 의존성 주입)', '<speak><phoneme alphabet="x-sampa" ph="pr@-vaId In-dZEkt">Provide Inject</phoneme></speak>', '중간 컴포넌트들을 거쳐 props를 일일이 내리는 Props Drilling 없이, 최상위 조상 컴포넌트가 깊은 곳에 있는 자손에게 데이터를 직통으로 주입하는 패턴', '앱 루트에서 설정한 테마나 전역 언어 설정을 5단계 아래의 깊은 하위 컴포넌트에서 직접 꺼내 쓰기 위해 `{{Provide / Inject}}`를 활용했다.', 'HARD'),
 (929, 9, 'Scoped CSS', 'Vue Scoped CSS (<style scoped>)', '스코프드 씨에스에스 (스타일 격리)', '<speak><phoneme alphabet="x-sampa" ph="skoUpt si-Es-Es">Scoped CSS</phoneme></speak>', '`<style scoped>`를 선언하면 Vue가 컴포넌트 내부 DOM 요소에 고유한 `data-v-xxxx` 속성을 부여하여 다른 컴포넌트의 스타일에 간섭받지 않게 격리하는 기능', '카드 컴포넌트의 `.btn` 클래스 스타일이 다른 화면의 버튼 디자인을 오염시키지 않고 해당 파일 안에서만 동작하도록 `{{Scoped CSS}}`를 적용했다.', 'EASY'),
-(930, 9, 'Vite', 'Vite Next-Gen Frontend Tooling', '비트 (Vite 차세대 빌드 도구)', '<speak><phoneme alphabet="x-sampa" ph="vit">Vite</phoneme></speak>', '개발 시 브라우저 네이티브 ES Modules(ESM)을 활용하여 번들링 없이 0.05초 만에 서버를 기동하고 초고속 HMR을 제공하는 차세대 프론트엔드 빌드 툴', '기존 Webpack의 느린 빌드 속도에서 벗어나 수정 즉시 브라우저에 반영되는 초고속 개발 환경을 구축하기 위해 `{{Vite}}`를 개발 서버로 채택했다.', 'EASY');
+(930, 9, 'Vite', 'Vite Next-Gen Frontend Tooling', '비트 (Vite 차세대 빌드 도구)', '<speak><phoneme alphabet="x-sampa" ph="vit">Vite</phoneme></speak>', '개발 시 브라우저 네이티브 ES Modules(ESM)을 활용하여 번들링 없이 0.05초 만에 서버를 기동하고 초고속 HMR을 제공하는 차세대 프론트엔드 빌드 툴', '기존 Webpack의 느린 빌드 속도에서 벗어나 수정 즉시 브라우저에 반영되는 초고속 개발 환경을 구축하기 위해 `{{Vite}}`를 개발 서버로 채택했다.', 'EASY')
+ON CONFLICT DO NOTHING;
 
 -- 4. Confusing Distractors Feedback Dictionary
 INSERT INTO CONFUSING_DISTRACTORS (distractor_id, word_id, wrong_input, feedback_explanation, is_ai_generated) VALUES
@@ -565,4 +567,5 @@ INSERT INTO CONFUSING_DISTRACTORS (distractor_id, word_id, wrong_input, feedback
 (268, 927, 'defineProps', '부모를 향해 이벤트를 발행할 수 있도록 선언하는 매크로는 defineEmits입니다.', FALSE),
 (269, 928, 'Props', '중간 컴포넌트를 건너뛰고 깊은 자손에게 직접 데이터를 주입하는 패턴은 Provide / Inject입니다.', FALSE),
 (270, 929, 'Global CSS', '컴포넌트 고유의 data 속성을 통해 스타일 충돌을 원천 방지하는 기능은 Scoped CSS (<style scoped>)입니다.', FALSE),
-(271, 930, 'Webpack', '네이티브 ESM 기반으로 초고속 서버 구동과 HMR을 지원하는 차세대 빌드 도구는 Vite입니다.', FALSE);
+(271, 930, 'Webpack', '네이티브 ESM 기반으로 초고속 서버 구동과 HMR을 지원하는 차세대 빌드 도구는 Vite입니다.', FALSE)
+ON CONFLICT DO NOTHING;

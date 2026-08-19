@@ -12,6 +12,10 @@ spring:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
 
 jwt:
   secret: ${JWT_SECRET:skavoca-super-secret-key-for-jwt-token-generation-2026-must-be-256-bits-long}
