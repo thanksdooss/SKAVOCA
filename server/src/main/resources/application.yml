@@ -24,6 +24,6 @@ server:
   port: 8080
 
 jwt:
-  secret: ***REMOVED***
+  secret: ${JWT_SECRET:***REMOVED***}
   access-expiration: 1800000
   refresh-expiration: 604800000
