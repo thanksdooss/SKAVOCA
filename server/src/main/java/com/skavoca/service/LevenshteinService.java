@@ -21,6 +21,17 @@ public class LevenshteinService {
         return 1.0 - ((double) distance / maxLength);
     }
 
+    public boolean isTypoForgiven(String input, String target) {
+        if (input == null || target == null) return false;
+        if (target.length() <= 3) {
+            return input.equals(target);
+        } else if (target.length() <= 5) {
+            return calculateDistance(input, target) <= 1;
+        } else {
+            return calculateSimilarity(input, target) >= 0.8;
+        }
+    }
+
     public int calculateDistance(String s1, String s2) {
         int[][] dp = new int[s1.length() + 1][s2.length() + 1];
 

@@ -26,4 +26,14 @@ public class ConfusingDistractor {
     
     @Column(name = "is_ai_generated")
     private Boolean isAiGenerated;
+    
+    @Column(name = "confusing_word_id")
+    private Long confusingWordId;
+    
+    @Column(name = "explanation_correct", columnDefinition = "TEXT")
+    private String explanationCorrect;
+    
+    @Column(name = "explanation_confusing", columnDefinition = "TEXT")
+    private String explanationConfusing;
+
 }

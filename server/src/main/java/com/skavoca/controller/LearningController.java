@@ -31,4 +31,9 @@ public class LearningController {
     public ResponseEntity<SubmitAnswerResponse> submitAnswer(@RequestBody SubmitAnswerRequest request) {
         return ResponseEntity.ok(learningService.submitAnswer(getCurrentUserId(), request));
     }
+
+    @PostMapping("/sync-batch")
+    public ResponseEntity<com.skavoca.dto.SyncBatchResponse> syncBatch(@RequestBody com.skavoca.dto.SyncBatchRequest request) {
+        return ResponseEntity.ok(learningService.syncBatch(getCurrentUserId(), request));
+    }
 }

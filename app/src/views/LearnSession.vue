@@ -174,7 +174,7 @@ let lastActivityTime = Date.now();
 let afkCheckInterval = null;
 let afkPausedDuration = 0; // AFK 중 경과 시간 누적 (ms)
 let afkStartTime = null;
-const AFK_THRESHOLD_SEC = 30;
+const AFK_THRESHOLD_SEC = 60;
 
 function resetActivityTimer() {
   lastActivityTime = Date.now();

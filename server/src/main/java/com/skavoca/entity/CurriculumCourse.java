@@ -15,6 +15,12 @@ public class CurriculumCourse {
     @Column(name = "course_name", nullable = false, length = 100)
     private String courseName;
     
+    @Column(name = "course_code", unique = true, nullable = false, length = 30)
+    private String courseCode;
+    
+    @Column(columnDefinition = "TEXT")
+    private String description;
+    
     @Column(length = 20)
     private String icon;
     
@@ -23,4 +29,8 @@ public class CurriculumCourse {
     
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
+    
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 }

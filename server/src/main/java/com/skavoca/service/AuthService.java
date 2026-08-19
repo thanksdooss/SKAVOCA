@@ -25,6 +25,9 @@ public class AuthService {
     }
 
     public AuthResponse signup(SignupRequest request) {
+        if (request.getAuthCode() != null && request.getAuthCode().trim().isEmpty()) {
+            throw new RuntimeException("Invalid auth code");
+        }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already in use");
         }
@@ -81,6 +84,10 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
                 
+        if (user.getLockoutUntil() != null && user.getLockoutUntil().isAfter(java.time.LocalDateTime.now())) {
+            throw new RuntimeException("Account locked");
+        }
+                
         boolean matches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
         
         // Graceful handling for seed accounts if hash was unhashed
@@ -93,9 +100,29 @@ public class AuthService {
         }
 
         if (!matches) {
+            int fails = user.getLoginFailCount() == null ? 0 : user.getLoginFailCount();
+            user.setLoginFailCount(fails + 1);
+            if (user.getLoginFailCount() >= 5) {
+                user.setLockoutUntil(java.time.LocalDateTime.now().plusSeconds(30));
+            }
+            userRepository.save(user);
             throw new RuntimeException("Invalid email or password");
         }
 
+        user.setLoginFailCount(0);
+        user.setLastLoginAt(java.time.LocalDateTime.now());
+        userRepository.save(user);
+
+        return createAuthResponse(user);
+    }
+
+    public AuthResponse refreshToken(com.skavoca.dto.RefreshRequest request) {
+        if (!jwtProvider.validateToken(request.getRefreshToken())) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+        Long userId = jwtProvider.getUserIdFromToken(request.getRefreshToken());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         return createAuthResponse(user);
     }
 

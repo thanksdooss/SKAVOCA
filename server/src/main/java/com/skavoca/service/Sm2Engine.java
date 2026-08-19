@@ -21,6 +21,14 @@ public class Sm2Engine {
     public int calculateNextInterval(int repetitions, double newEf) {
         if (repetitions == 0) return 1;
         if (repetitions == 1) return 6;
-        return (int) Math.round(6 * newEf); // simplified for later reps. Strictly SM-2: I(n) = I(n-1) * EF
+        int interval = (int) Math.round(6 * newEf); // simplified for later reps. Strictly SM-2: I(n) = I(n-1) * EF
+        return applyAnkiFuzzing(interval);
+    }
+
+    public int applyAnkiFuzzing(int intervalDays) {
+        if (intervalDays < 3) return intervalDays;
+        int fuzz = (int) Math.round(intervalDays * 0.1);
+        int fuzzed = intervalDays + (int) (Math.random() * (2 * fuzz + 1)) - fuzz;
+        return Math.max(1, fuzzed);
     }
 }

@@ -68,6 +68,13 @@ public class LearningService {
     }
 
     public SubmitAnswerResponse submitAnswer(Long userId, SubmitAnswerRequest request) {
+        if (request.getLocalLogId() != null && !request.getLocalLogId().isEmpty()) {
+            java.util.Optional<ReviewLog> existing = logRepository.findByLocalLogId(request.getLocalLogId());
+            if (existing.isPresent()) {
+                return buildResponseFromExistingLog(existing.get());
+            }
+        }
+        
         User user = userRepository.findById(userId).orElseThrow();
         Word word = wordRepository.findById(request.getWordId()).orElseThrow();
         
@@ -97,7 +104,7 @@ public class LearningService {
                 resultType = "INCORRECT";
                 isConfusion = true;
                 confusedWith = confusedWord.getTerm();
-            } else if (similarity >= 0.8) {
+            } else if (levenshteinService.isTypoForgiven(normalizedInput, normalizedAnswer)) {
                 resultType = "TYPO_WARNING";
                 isTypo = true;
                 allowRetry = true;
@@ -134,11 +141,28 @@ public class LearningService {
         double oldEf = progress.getEasinessFactor();
         int oldInterval = progress.getIntervalDays();
         
+        LocalDateTime reviewTime = LocalDateTime.now();
+        if (request.getStudiedAt() != null) {
+            LocalDateTime studiedAt = request.getStudiedAt();
+            LocalDateTime now = LocalDateTime.now();
+            if (studiedAt.isBefore(now.minusHours(48)) || studiedAt.isAfter(now.plusHours(48))) {
+                reviewTime = now;
+            } else {
+                reviewTime = studiedAt;
+            }
+        }
+
+        boolean alreadyEarnedXpToday = logRepository.existsByUser_UserIdAndWord_WordIdAndReviewedAtAfter(
+            userId, word.getWordId(), reviewTime.toLocalDate().atStartOfDay()
+        );
+
         if (isCorrect) {
             progress.setEasinessFactor(sm2Engine.calculateNewEf(oldEf, quality));
             progress.setRepetitions(progress.getRepetitions() + 1);
             progress.setIntervalDays(sm2Engine.calculateNextInterval(progress.getRepetitions(), progress.getEasinessFactor()));
-            gamificationService.awardXp(userId, 10);
+            if (!alreadyEarnedXpToday) {
+                gamificationService.awardXp(userId, 10);
+            }
         } else {
             progress.setEasinessFactor(Math.max(1.3, oldEf - 0.2));
             progress.setRepetitions(0);
@@ -147,11 +171,12 @@ public class LearningService {
         }
         
         progress.setTotalReviews(progress.getTotalReviews() + 1);
-        progress.setLastReviewedAt(LocalDateTime.now());
-        progress.setNextPracticeDate(LocalDateTime.now().plusDays(progress.getIntervalDays()));
+        progress.setLastReviewedAt(reviewTime);
+        progress.setNextPracticeDate(reviewTime.plusDays(progress.getIntervalDays()));
         progressRepository.save(progress);
         
         ReviewLog log = ReviewLog.builder()
+            .localLogId(request.getLocalLogId())
             .user(user)
             .word(word)
             .inferredQuality(quality)
@@ -160,6 +185,7 @@ public class LearningService {
             .typoCount(request.getTypoCount())
             .calculatedEf(progress.getEasinessFactor())
             .reviewInterval(progress.getIntervalDays())
+            .reviewedAt(reviewTime)
             .build();
         logRepository.save(log);
         
@@ -168,14 +194,16 @@ public class LearningService {
             feedback = aiFeedbackService.getDistractorFeedback(word.getWordId(), request.getUserInput());
         }
 
+        int earnedXp = (isCorrect && !alreadyEarnedXpToday) ? 10 : 0;
+
         return SubmitAnswerResponse.builder()
             .resultType(resultType)
             .isCorrect(isCorrect)
             .isTypo(isTypo)
             .similarity(similarity)
             .correctTerm(word.getTerm())
-            .earnedXp(isCorrect ? 10 : 0)
-            .currentTotalXp(user.getXp() + (isCorrect ? 10 : 0))
+            .earnedXp(earnedXp)
+            .currentTotalXp(user.getXp() + earnedXp)
             .inferredQuality(quality)
             .algorithmMetrics(SubmitAnswerResponse.AlgorithmMetrics.builder()
                 .oldEf(oldEf)
@@ -190,6 +218,47 @@ public class LearningService {
             .build();
     }
     
+    public com.skavoca.dto.SyncBatchResponse syncBatch(Long userId, com.skavoca.dto.SyncBatchRequest request) {
+        List<SubmitAnswerResponse> results = new ArrayList<>();
+        int success = 0;
+        int fail = 0;
+        if (request.getItems() != null) {
+            for (SubmitAnswerRequest item : request.getItems()) {
+                try {
+                    SubmitAnswerResponse res = submitAnswer(userId, item);
+                    results.add(res);
+                    success++;
+                } catch (Exception e) {
+                    fail++;
+                }
+            }
+        }
+        return new com.skavoca.dto.SyncBatchResponse(results, success, fail);
+    }
+
+    
+    private SubmitAnswerResponse buildResponseFromExistingLog(ReviewLog log) {
+        return SubmitAnswerResponse.builder()
+            .resultType(log.getIsCorrect() ? "CORRECT" : "INCORRECT")
+            .isCorrect(log.getIsCorrect())
+            .isTypo(log.getTypoCount() != null && log.getTypoCount() > 0)
+            .similarity(1.0)
+            .correctTerm(log.getWord().getTerm())
+            .earnedXp(log.getXpEarned())
+            .currentTotalXp(log.getUser().getXp())
+            .inferredQuality(log.getInferredQuality())
+            .algorithmMetrics(SubmitAnswerResponse.AlgorithmMetrics.builder()
+                .oldEf(0.0)
+                .newEf(log.getCalculatedEf())
+                .oldInterval(0)
+                .newInterval(log.getReviewInterval())
+                .repetitions(0)
+                .build())
+            .message("Cached result")
+            .allowRetry(false)
+            .build();
+    }
+
     private WordDto mapToDto(Word word) {
         return WordDto.builder()
             .wordId(word.getWordId())

@@ -1,12 +1,12 @@
 -- ==========================================================
 -- SKAVOCA (SKALA VOCA) Master Database DDL Schema
--- Compatible with: PostgreSQL, MySQL 8.0+, SQLite 3, Supabase
 -- ==========================================================
 
 DROP TABLE IF EXISTS REVIEW_LOGS;
 DROP TABLE IF EXISTS USER_PROGRESS;
 DROP TABLE IF EXISTS WEEKLY_LEAGUE;
 DROP TABLE IF EXISTS CONFUSING_DISTRACTORS;
+DROP TABLE IF EXISTS COURSE_WORDS_MAP;
 DROP TABLE IF EXISTS WORDS;
 DROP TABLE IF EXISTS CURRICULUM_COURSES;
 DROP TABLE IF EXISTS USERS;
@@ -17,21 +17,28 @@ CREATE TABLE USERS (
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     nickname VARCHAR(50) NOT NULL,
-    role VARCHAR(20) DEFAULT 'ROLE_STUDENT', -- ROLE_STUDENT, ROLE_INSTRUCTOR
+    role VARCHAR(20) DEFAULT 'ROLE_STUDENT',
     cohort INT DEFAULT 4,
     xp BIGINT DEFAULT 0,
     tier VARCHAR(50) DEFAULT '코딩 노비',
     streak_days INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    last_login_at TIMESTAMP NULL,
+    login_fail_count INT NOT NULL DEFAULT 0,
+    lockout_until TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- 2. CURRICULUM_COURSES: SKALA 9대 정규 커리큘럼 과목
 CREATE TABLE CURRICULUM_COURSES (
     course_id INT PRIMARY KEY,
+    course_code VARCHAR(30) UNIQUE NOT NULL,
     course_name VARCHAR(100) NOT NULL,
+    description TEXT NULL,
     icon VARCHAR(20),
     color VARCHAR(20),
-    order_index INT NOT NULL
+    order_index INT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- 3. WORDS: 270선 핵심 IT 어휘 마스터 테이블
@@ -45,13 +52,26 @@ CREATE TABLE WORDS (
     easy_meaning TEXT NOT NULL,
     context_sentence TEXT NOT NULL,
     difficulty VARCHAR(20) DEFAULT 'MEDIUM',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP NULL
+);
+
+-- COURSE_WORDS_MAP
+CREATE TABLE COURSE_WORDS_MAP (
+    id BIGSERIAL PRIMARY KEY,
+    curriculum_course_id BIGINT NOT NULL REFERENCES CURRICULUM_COURSES(course_id) ON DELETE RESTRICT,
+    word_id BIGINT NOT NULL REFERENCES WORDS(word_id) ON DELETE RESTRICT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(curriculum_course_id, word_id)
 );
 
 -- 4. CONFUSING_DISTRACTORS: 혼동 오답 비교 분석 피드백 딕셔너리
 CREATE TABLE CONFUSING_DISTRACTORS (
     distractor_id BIGINT PRIMARY KEY,
-    word_id BIGINT NOT NULL REFERENCES WORDS(word_id) ON DELETE CASCADE,
+    word_id BIGINT NOT NULL REFERENCES WORDS(word_id) ON DELETE RESTRICT,
     wrong_input VARCHAR(100) NOT NULL,
     feedback_explanation TEXT NOT NULL,
     is_ai_generated BOOLEAN DEFAULT FALSE
@@ -61,7 +81,7 @@ CREATE TABLE CONFUSING_DISTRACTORS (
 CREATE TABLE USER_PROGRESS (
     progress_id BIGINT PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES USERS(user_id) ON DELETE CASCADE,
-    word_id BIGINT NOT NULL REFERENCES WORDS(word_id) ON DELETE CASCADE,
+    word_id BIGINT NOT NULL REFERENCES WORDS(word_id) ON DELETE RESTRICT,
     repetitions INT DEFAULT 0,
     interval_days INT DEFAULT 1,
     easiness_factor FLOAT DEFAULT 2.5,
@@ -69,15 +89,19 @@ CREATE TABLE USER_PROGRESS (
     last_reviewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     total_reviews INT DEFAULT 0,
     total_lapses INT DEFAULT 0,
+    quality INT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_user_word UNIQUE (user_id, word_id)
 );
 
 -- 6. REVIEW_LOGS: 암묵적 텔레메트리 학습 이력 로그
 CREATE TABLE REVIEW_LOGS (
     log_id BIGINT PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES USERS(user_id),
+    user_id BIGINT NOT NULL REFERENCES USERS(user_id) ON DELETE CASCADE,
     word_id BIGINT NOT NULL REFERENCES WORDS(word_id),
-    inferred_quality INT NOT NULL, -- 0 (Again) ~ 5 (Perfect)
+    is_correct BOOLEAN NOT NULL DEFAULT TRUE,
+    xp_earned INT NOT NULL DEFAULT 0,
+    inferred_quality INT NOT NULL,
     response_time_sec FLOAT NOT NULL,
     hint_count INT DEFAULT 0,
     typo_count INT DEFAULT 0,

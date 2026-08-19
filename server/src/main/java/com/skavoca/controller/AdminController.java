@@ -33,4 +33,21 @@ public class AdminController {
         adminService.createWord(request);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/words/bulk-upload")
+    public ResponseEntity<com.skavoca.dto.BulkUploadResponse> bulkUploadWords(@Valid @RequestBody List<WordCreateRequest> requests) {
+        return ResponseEntity.ok(adminService.bulkUploadWords(requests));
+    }
+
+    @PutMapping("/words/{wordId}")
+    public ResponseEntity<Void> updateWord(@PathVariable Long wordId, @Valid @RequestBody WordCreateRequest request) {
+        adminService.updateWord(wordId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/words/{wordId}")
+    public ResponseEntity<Void> deleteWord(@PathVariable Long wordId) {
+        adminService.deleteWord(wordId);
+        return ResponseEntity.ok().build();
+    }
 }

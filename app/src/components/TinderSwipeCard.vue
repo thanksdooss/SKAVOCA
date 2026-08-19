@@ -156,7 +156,7 @@ function endDrag() {
   if (dx > threshold) {
     triggerFling("right", 4);
   } else if (dx < -threshold) {
-    triggerFling("left", 0);
+    triggerFling("left", 1);
   }
   // If below threshold, card snaps back (no action)
 }

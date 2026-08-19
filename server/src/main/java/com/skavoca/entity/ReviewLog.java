@@ -15,6 +15,10 @@ public class ReviewLog {
     @Column(name = "log_id")
     private Long logId;
     
+    @Column(name = "local_log_id")
+    private String localLogId;
+
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -22,6 +26,14 @@ public class ReviewLog {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "word_id", nullable = false)
     private Word word;
+    
+    @Builder.Default
+    @Column(name = "is_correct", nullable = false)
+    private Boolean isCorrect = true;
+    
+    @Builder.Default
+    @Column(name = "xp_earned", nullable = false)
+    private Integer xpEarned = 0;
     
     @Column(name = "inferred_quality", nullable = false)
     private Integer inferredQuality;
@@ -41,6 +53,7 @@ public class ReviewLog {
     @Column(name = "review_interval", nullable = false)
     private Integer reviewInterval;
     
-    @Column(name = "reviewed_at", insertable = false, updatable = false)
-    private LocalDateTime reviewedAt;
+    @Builder.Default
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt = LocalDateTime.now();
 }

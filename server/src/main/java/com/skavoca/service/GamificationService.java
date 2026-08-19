@@ -86,8 +86,12 @@ public class GamificationService {
         user.setXp(user.getXp() + xpAmount);
         
         // Tier promotion logic
-        if (user.getXp() >= 1000) user.setTier("시니어 개발자");
-        else if (user.getXp() >= 500) user.setTier("주니어 개발자");
+        if (user.getXp() >= 10000) user.setTier("전설의 CTO");
+        else if (user.getXp() >= 5000) user.setTier("다이아몬드 아키텍트");
+        else if (user.getXp() >= 2500) user.setTier("테크 리드");
+        else if (user.getXp() >= 1000) user.setTier("시니어 개발자");
+        else if (user.getXp() >= 300) user.setTier("주니어 개발자");
+        else user.setTier("코딩 노비");
         
         userRepository.save(user);
 

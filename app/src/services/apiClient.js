@@ -43,7 +43,7 @@ apiClient.interceptors.response.use(
 // API service functions
 export const api = {
   // Auth
-  signup: (data) => apiClient.post("/api/v1/auth/signup", data),
+  signup: (data) => apiClient.post("/api/v1/auth/register", data),
   login: (data) => apiClient.post("/api/v1/auth/login", data),
 
   // Learning
@@ -61,6 +61,11 @@ export const api = {
   getDifficultWords: (cohort = 4, limit = 10) =>
     apiClient.get(`/api/v1/admin/analytics/difficult-words?cohort=${cohort}&limit=${limit}`),
   createWord: (data) => apiClient.post("/api/v1/admin/words", data),
+  bulkUploadWords: (words) => apiClient.post('/api/v1/admin/words/bulk-upload', words),
+
+  // Catalog
+  getCourses: () => apiClient.get('/api/v1/catalog/courses'),
+  getCourseWords: (courseId) => apiClient.get(`/api/v1/catalog/courses/${courseId}/words`),
 
   // Words (for detail view)
   getWordDetail: (wordId) => apiClient.get(`/api/v1/words/${wordId}`),
