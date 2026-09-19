@@ -1,9 +1,5 @@
-databases:
-  - name: skavoca-db
-    plan: free
-    databaseName: skavoca
-    region: singapore
-
+# DB는 Neon(무료, 만료 없음)을 사용한다. Render 무료 PostgreSQL은 30일 후 만료되므로 사용하지 않는다.
+# DB_* 값은 Render 대시보드(Environment)에서 직접 입력한다 (sync: false = 저장소에 값을 두지 않음).
 services:
   - type: web
     name: skavoca-api
@@ -12,29 +8,22 @@ services:
     dockerContext: ./server
     plan: free
     region: singapore
+    healthCheckPath: /api/v1/auth/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: DB_HOST
-        fromDatabase:
-          name: skavoca-db
-          property: host
+        sync: false
       - key: DB_PORT
-        fromDatabase:
-          name: skavoca-db
-          property: port
+        value: "5432"
       - key: DB_NAME
-        fromDatabase:
-          name: skavoca-db
-          property: database
+        sync: false
       - key: DB_USERNAME
-        fromDatabase:
-          name: skavoca-db
-          property: user
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase:
-          name: skavoca-db
-          property: password
+        sync: false
+      - key: DB_SSLMODE
+        value: require
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGINS
