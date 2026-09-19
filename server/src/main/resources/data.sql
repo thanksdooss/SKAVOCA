@@ -1,4 +1,20 @@
 -- ==========================================================
+-- 운영(prod) 시드 스크립트
+-- Hibernate(ddl-auto=update)가 엔티티 기준으로 테이블을 만든 뒤 실행된다
+-- (spring.jpa.defer-datasource-initialization=true).
+-- 모든 구문은 재실행해도 안전하도록 작성한다 (서버가 시작될 때마다 실행됨).
+-- ==========================================================
+
+-- 0. 엔티티의 NOT NULL 컬럼에 DB 기본값 지정 (시드 INSERT가 생략하는 컬럼)
+ALTER TABLE users ALTER COLUMN login_fail_count SET DEFAULT 0;
+ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE curriculum_courses ALTER COLUMN is_active SET DEFAULT TRUE;
+ALTER TABLE words ALTER COLUMN is_active SET DEFAULT TRUE;
+ALTER TABLE words ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE course_words_map ALTER COLUMN sort_order SET DEFAULT 0;
+ALTER TABLE course_words_map ALTER COLUMN created_at SET DEFAULT NOW();
+
+-- ==========================================================
 -- SKAVOCA Seeding Data (270 Words + Courses + Demo Users)
 -- ==========================================================
 
@@ -9,16 +25,16 @@ INSERT INTO USERS (user_id, email, password_hash, nickname, role, cohort, xp, ti
 (3, 'junior_dev@skala.ai', '$2a$10$w8T0...BCryptHash', '이신입', 'ROLE_STUDENT', 4, 150, '코딩 노비', 2) ON CONFLICT (user_id) DO NOTHING;
 
 -- 2. Curriculum Courses
-INSERT INTO CURRICULUM_COURSES (course_id, course_name, icon, color, order_index) VALUES
-(1, '1. Git 이해 및 활용', '🐙', '#f05032', 1),
-(2, '2. Python 데이터 분석', '🐍', '#3776ab', 2),
-(3, '3. 스마트 데이터', '💾', '#00a4e4', 3),
-(4, '4. HTML, CSS, JavaScript', '🌐', '#f7df1e', 4),
-(5, '5. 기초 통계 및 분석', '📊', '#6366f1', 5),
-(6, '6. Feature Engineering', '⚙️', '#ec4899', 6),
-(7, '7. Java, SpringBoot, REST API', '🍃', '#6db33f', 7),
-(8, '8. Agile 및 MSA 개발', '☸️', '#326ce5', 8),
-(9, '9. Frontend Vue.js', '⚡', '#42b883', 9)
+INSERT INTO CURRICULUM_COURSES (course_id, course_code, course_name, icon, color, order_index) VALUES
+(1, 'COURSE-01', '1. Git 이해 및 활용', '🐙', '#f05032', 1),
+(2, 'COURSE-02', '2. Python 데이터 분석', '🐍', '#3776ab', 2),
+(3, 'COURSE-03', '3. 스마트 데이터', '💾', '#00a4e4', 3),
+(4, 'COURSE-04', '4. HTML, CSS, JavaScript', '🌐', '#f7df1e', 4),
+(5, 'COURSE-05', '5. 기초 통계 및 분석', '📊', '#6366f1', 5),
+(6, 'COURSE-06', '6. Feature Engineering', '⚙️', '#ec4899', 6),
+(7, 'COURSE-07', '7. Java, SpringBoot, REST API', '🍃', '#6db33f', 7),
+(8, 'COURSE-08', '8. Agile 및 MSA 개발', '☸️', '#326ce5', 8),
+(9, 'COURSE-09', '9. Frontend Vue.js', '⚡', '#42b883', 9)
 ON CONFLICT DO NOTHING;
 
 -- 3. Master 270 Vocabulary Words
@@ -569,3 +585,18 @@ INSERT INTO CONFUSING_DISTRACTORS (distractor_id, word_id, wrong_input, feedback
 (270, 929, 'Global CSS', '컴포넌트 고유의 data 속성을 통해 스타일 충돌을 원천 방지하는 기능은 Scoped CSS (<style scoped>)입니다.', FALSE),
 (271, 930, 'Webpack', '네이티브 ESM 기반으로 초고속 서버 구동과 HMR을 지원하는 차세대 빌드 도구는 Vite입니다.', FALSE)
 ON CONFLICT DO NOTHING;
+
+-- 5. 과정-단어 매핑 (카탈로그 조회에 사용)
+INSERT INTO course_words_map (curriculum_course_id, word_id, sort_order)
+SELECT course_id, word_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY word_id) - 1
+FROM words w
+WHERE NOT EXISTS (
+    SELECT 1 FROM course_words_map m
+    WHERE m.curriculum_course_id = w.course_id AND m.word_id = w.word_id
+);
+
+-- 6. ID를 직접 지정해 넣었으므로, 이후 자동 생성 ID가 겹치지 않도록 시퀀스를 맞춘다
+SELECT setval(pg_get_serial_sequence('users', 'user_id'), GREATEST((SELECT MAX(user_id) FROM users), 1));
+SELECT setval(pg_get_serial_sequence('curriculum_courses', 'course_id'), GREATEST((SELECT MAX(course_id) FROM curriculum_courses), 1));
+SELECT setval(pg_get_serial_sequence('words', 'word_id'), GREATEST((SELECT MAX(word_id) FROM words), 1));
+SELECT setval(pg_get_serial_sequence('confusing_distractors', 'distractor_id'), GREATEST((SELECT MAX(distractor_id) FROM confusing_distractors), 1));
