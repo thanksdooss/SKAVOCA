@@ -1,6 +1,7 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:skavoca}
+    # Neon 등 외부 DB는 DB_SSLMODE=require 로 설정
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:skavoca}?sslmode=${DB_SSLMODE:prefer}
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME:jin}
     password: ${DB_PASSWORD:}

@@ -1,0 +1,17 @@
+# Render 무료 플랜은 15분간 요청이 없으면 서버가 휴면 상태가 된다.
+# 한국 시간 08:00~24:00 동안 14분마다 헬스체크를 보내 서버를 깨워 둔다.
+# (월 750시간 무료 한도 안에서 동작하도록 심야 시간은 제외)
+name: keep-warm
+
+on:
+  schedule:
+    - cron: "*/14 23,0-14 * * *" # UTC 기준 = KST 08:00~23:59
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping API health endpoint
+        run: curl -fsS --max-time 120 https://skavoca-api.onrender.com/api/v1/auth/health || true
