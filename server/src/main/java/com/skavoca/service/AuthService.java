@@ -48,11 +48,14 @@ public class AuthService {
         return createAuthResponse(user);
     }
 
+    // 공개 데모 계정 (비밀번호는 로그인 화면에 공개됨). 데모 계정은 DemoAccounts에 의해 읽기 전용으로 제한된다.
+    private static final String DEMO_PASSWORD = "password123";
+
     @jakarta.annotation.PostConstruct
     public void initDemoUsers() {
-        initOrUpdateUser("skala_student@skala.ai", "password123", "김스칼라", "ROLE_STUDENT", 4, 1420L, "시니어 개발자", 7);
-        initOrUpdateUser("instructor_lead@skala.ai", "password123", "박리더 강사", "ROLE_INSTRUCTOR", 4, 8900L, "전설의 CTO", 45);
-        initOrUpdateUser("junior_dev@skala.ai", "password123", "이신입", "ROLE_STUDENT", 4, 150L, "코딩 노비", 2);
+        initOrUpdateUser("skala_student@skala.ai", DEMO_PASSWORD, "김스칼라", "ROLE_STUDENT", 4, 1420L, "시니어 개발자", 7);
+        initOrUpdateUser("instructor_lead@skala.ai", DEMO_PASSWORD, "박리더 강사", "ROLE_INSTRUCTOR", 4, 8900L, "전설의 CTO", 45);
+        initOrUpdateUser("junior_dev@skala.ai", DEMO_PASSWORD, "이신입", "ROLE_STUDENT", 4, 150L, "코딩 노비", 2);
     }
 
     private void initOrUpdateUser(String email, String rawPassword, String nickname, String role, int cohort, Long xp, String tier, int streak) {
@@ -90,15 +93,6 @@ public class AuthService {
                 
         boolean matches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
         
-        // Graceful handling for seed accounts if hash was unhashed
-        if (!matches && ("password123".equals(request.getPassword()) || "password123!".equals(request.getPassword()))) {
-            if (user.getPasswordHash() != null && user.getPasswordHash().contains("BCryptHash")) {
-                user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-                userRepository.save(user);
-                matches = true;
-            }
-        }
-
         if (!matches) {
             int fails = user.getLoginFailCount() == null ? 0 : user.getLoginFailCount();
             user.setLoginFailCount(fails + 1);
@@ -117,7 +111,7 @@ public class AuthService {
     }
 
     public AuthResponse refreshToken(com.skavoca.dto.RefreshRequest request) {
-        if (!jwtProvider.validateToken(request.getRefreshToken())) {
+        if (!jwtProvider.validateRefreshToken(request.getRefreshToken())) {
             throw new RuntimeException("Invalid refresh token");
         }
         Long userId = jwtProvider.getUserIdFromToken(request.getRefreshToken());

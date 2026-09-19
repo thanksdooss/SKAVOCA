@@ -24,6 +24,7 @@ server:
   port: 8080
 
 jwt:
-  secret: ${JWT_SECRET:***REMOVED***}
+  # 비워두면 로컬 실행 시 임의의 키가 생성된다. 운영 환경은 application-prod.yml 참고
+  secret: ${JWT_SECRET:}
   access-expiration: 1800000
   refresh-expiration: 604800000

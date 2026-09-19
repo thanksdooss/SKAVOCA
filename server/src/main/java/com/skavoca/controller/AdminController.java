@@ -28,23 +28,27 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getDifficultWords(cohort, limit));
     }
 
+    @PreAuthorize("(hasRole('INSTRUCTOR') or hasRole('ADMIN')) and !hasAuthority('DEMO_READONLY')")
     @PostMapping("/words")
     public ResponseEntity<Void> createWord(@Valid @RequestBody WordCreateRequest request) {
         adminService.createWord(request);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("(hasRole('INSTRUCTOR') or hasRole('ADMIN')) and !hasAuthority('DEMO_READONLY')")
     @PostMapping("/words/bulk-upload")
     public ResponseEntity<com.skavoca.dto.BulkUploadResponse> bulkUploadWords(@Valid @RequestBody List<WordCreateRequest> requests) {
         return ResponseEntity.ok(adminService.bulkUploadWords(requests));
     }
 
+    @PreAuthorize("(hasRole('INSTRUCTOR') or hasRole('ADMIN')) and !hasAuthority('DEMO_READONLY')")
     @PutMapping("/words/{wordId}")
     public ResponseEntity<Void> updateWord(@PathVariable Long wordId, @Valid @RequestBody WordCreateRequest request) {
         adminService.updateWord(wordId, request);
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("(hasRole('INSTRUCTOR') or hasRole('ADMIN')) and !hasAuthority('DEMO_READONLY')")
     @DeleteMapping("/words/{wordId}")
     public ResponseEntity<Void> deleteWord(@PathVariable Long wordId) {
         adminService.deleteWord(wordId);

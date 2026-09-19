@@ -29,13 +29,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            if (jwtProvider.validateToken(token)) {
+            if (jwtProvider.validateAccessToken(token)) {
                 Long userId = jwtProvider.getUserIdFromToken(token);
                 String role = jwtProvider.getRoleFromToken(token);
+                String email = jwtProvider.getEmailFromToken(token);
                 // Set SecurityContext with userId as principal and role as authority
-                List<SimpleGrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority(role != null ? role : "ROLE_STUDENT")
-                );
+                List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+                authorities.add(new SimpleGrantedAuthority(role != null ? role : "ROLE_STUDENT"));
+                if (DemoAccounts.isDemo(email)) {
+                    // 공개 데모 계정은 데이터 변경 API를 호출할 수 없다
+                    authorities.add(new SimpleGrantedAuthority(DemoAccounts.READONLY_AUTHORITY));
+                }
                 UsernamePasswordAuthenticationToken auth = 
                     new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
